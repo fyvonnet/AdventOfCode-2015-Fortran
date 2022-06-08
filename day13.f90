@@ -1,7 +1,7 @@
 program day13
     implicit none
 
-    integer, parameter :: heap_length = 50000
+    integer, parameter :: heap_length = 400000
 
     type input
         character(len=10) :: name1, name2
@@ -32,7 +32,6 @@ program day13
 
     input_length = 0
     open(unit=99, file='inputs/day13', action='read', position='rewind')
-    !open(unit=99, file='inputs/day13-test', action='read', position='rewind')
     do
         read(99, *, iostat=ios)
         if (ios /= 0) exit
@@ -41,7 +40,6 @@ program day13
 
     rewind(99)
 
-    !nnodes = ceiling((sqrt(4.0 * input_length + 1.0) + 1) / 2)
     allocate(guests(input_length))
 
     do i = 1, input_length
@@ -90,7 +88,7 @@ program day13
         nnodes = nnodes + 1
     end do
 
-    allocate(matrix(nnodes, nnodes))
+    allocate(matrix(nnodes + 1, nnodes + 1))
     allocate(names(nnodes))
 
     names = ''
@@ -109,13 +107,12 @@ program day13
 
         matrix(a, b) = matrix(a, b) + guests(i)%units
         matrix(b, a) = matrix(b, a) + guests(i)%units
-
-        !matrix(find_name_id(guests(i)%name1, names), find_name_id(guests(i)%name2, names)) = guests(i)%units
     end do
 
     allocate(h%data(heap_length))
 
-    call search_route()
+    call search_route(nnodes)
+    call search_route(nnodes + 1)
 
 contains
 
@@ -123,15 +120,16 @@ contains
         character(len=10), intent(in) :: name
         character(len=10), intent(in) :: array(:)
 
-        do i = 1, size(array)
+        do i = 1, size(array) - 1
             if (array(i) == name) exit
         end do
 
     end function find_name_id
 
 
-    subroutine search_route()
+    subroutine search_route(nnodes)
         implicit none
+        integer, intent(in) :: nnodes
         type(heap_elm) :: new_elm, elm
 
         allocate(new_elm%not_visited(nnodes))
