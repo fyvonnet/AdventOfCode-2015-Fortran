@@ -1,9 +1,14 @@
 program day15
+    !use subset
+
     implicit none
+    !save
     integer :: i, j, k, input_length, ios
     character(len=80) :: line
     integer, allocatable :: input(:,:), spoons(:)
     integer :: maximum1, maximum2, properties(4), score
+    logical :: more = .false.
+    integer :: t, h
 
     open(unit=99, file='inputs/day15', action='read', position='rewind')
 
@@ -15,8 +20,10 @@ program day15
     end do
 
     rewind(99)
+
     allocate(input(input_length, 5))
     allocate(spoons(input_length))
+
 
     do i = 1, input_length
         read(99, '(A)', iostat=ios) line
@@ -36,23 +43,20 @@ program day15
         end do
     end do
 
+    close(99)
+
     maximum1 = 0
     maximum2 = 0
 
-    do i = 0, (100 ** input_length) - 1
-        k = i
-        do j = 1, input_length
-            spoons(j) = mod(k, 100)
-            k = k / 100
+    do
+        call nexcom(100, input_length, spoons, more, t, h)
+        do j = 1, 4
+            properties(j) = max(0, sum(input(:,j) * spoons))
         end do
-        if (sum(spoons) == 100) then
-            do j = 1, 4
-                properties(j) = max(0, sum(input(:,j) * spoons))
-            end do
-            score = product(properties)
-            maximum1 = max(maximum1, score)
-            if (sum(spoons * input(:,5)) == 500) maximum2 = max(maximum2, score)
-        end if
+        score = product(properties)
+        maximum1 = max(maximum1, score)
+        if (sum(spoons * input(:,5)) == 500) maximum2 = max(maximum2, score)
+        if (.not. more) exit
     end do
 
     print *, maximum1
@@ -86,6 +90,33 @@ contains
         i = i + 2 ! skip space after comma
     end subroutine read_int
 
+    ! adapted from "Combinatorial Algorithms second edition"
+    subroutine nexcom (n, k, r, mtc, t, h)
+        implicit none
+        integer, intent(in) :: n, k
+        integer, intent(inout) :: r(:)
+        logical, intent(inout) :: mtc
+        integer, intent(inout) :: t, h
+        integer :: i
+
+        10 if (mtc) goto 20
+        r(1) = n
+        t = n
+        h = 0
+        if (k .eq. 1) goto 15
+        do i = 2, k
+            r(i) = 0
+        end do
+        15 mtc = r(k) .ne. n
+        return
+        20 if (t .gt. 1) h = 0
+        30 h = h + 1
+        t = r(h)
+        r(h) = 0
+        r(1) = t - 1
+        r(h + 1) = r(h + 1) + 1
+        goto 15
+    end subroutine nexcom
 
 end program day15
 
